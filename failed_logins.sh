@@ -10,10 +10,19 @@ Awk="/usr/bin/awk"
 Egrep="/bin/egrep"
 Mail="/usr/bin/mail"
 Printf="/usr/bin/printf"
+Cat="/bin/cat"
 
 # Variables
 Admin="jake"
 Authlog="/var/log/auth.log"
+
+# Functions
+show_failed_logins()
+{
+	$Sed -n '1,$p' $Authlog | $Egrep "Failed password" | \
+	$Sed 's/invalid user//' | \
+	$Awk '{ print $1" "$2" "$3" \t"$9"\t\t"$11 }'
+}
 
 # Sanity checks
 if [ ! -r $Authlog ]; then
@@ -21,7 +30,7 @@ if [ ! -r $Authlog ]; then
 	exit 1
 fi
 
-for Bin in $Sed $Awk $Egrep $Mail $Printf; do
+for Bin in $Sed $Awk $Egrep $Mail $Printfi $Cat; do
 	if [ ! -x $Bin ]; then
 		echo "Can't execute $Bin"
 		exit 1
@@ -33,12 +42,13 @@ done
 # Print a nice header
 $Printf "Date & time\t\tUser\t\tFrom host\n"
 $Printf "-----------\t\t----\t\t---------\n"
-# Search for failed logins
-$Sed -n '1,$p' $Authlog | $Egrep "Failed password" | $Sed 's/invalid user//' | \
-$Awk '{ print $1" "$2" "$3" \t"$9"\t\t"$11 }'
+show_failed_logins
 
-# Save the last line for next run (WORK IN PROGRESS)
-cat /var/log/auth.log | sed -n '/Dec 28 20:40:41/{
+# Save the last line and the last timestamp for next run (WORK IN PROGRESS)
+show_failed_logins | $Awk '{ print $1" "$2" "$3 }' \
+	| $Sed -n '$p' > /tmp/failed_login_last_stamp.tmp
+
+$Cat $Authlog | sed -n '/Dec 28 20:40:41/{
 =
 p
 }' | tail -n2 | sed -n '/^[0-9]/p' > /tmp/failed_login_last_line.tmp
