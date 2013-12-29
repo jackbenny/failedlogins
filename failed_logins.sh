@@ -12,6 +12,9 @@ Mail="/usr/bin/mail"
 Printf="/usr/bin/printf"
 Cat="/bin/cat"
 Grep="/bin/grep"
+Mktemp="/bin/mktemp"
+Rm="/bin/rm"
+Tail="/usr/bin/tail"
 
 # Variables
 Admin="jake"
@@ -38,13 +41,25 @@ show_failed_logins()
 	$Awk '{ print $1" "$2" "$3" \t"$9"\t\t"$11 }'
 }
 
+save_last_stamp_and_line()
+{
+	show_failed_logins | $Awk '{ print $1" "$2" "$3 }' \
+		| $Sed -n '$p' > $StampTemp
+	LastStamp=`$Cat $StampTemp`
+
+	$Cat $Authlog | $Sed -n "/$LastStamp/{
+	=
+	p
+	}" | $Tail -n2 | $Sed -n '/^[0-9]/p' > $LineTemp
+}
+
 # Sanity checks
 if [ ! -r $Authlog ]; then
 	echo "Can't read $Authlog"
 	exit 1
 fi
 
-for Bin in $Sed $Awk $Egrep $Mail $Printfi $Cat $Grep; do
+for Bin in $Sed $Awk $Egrep $Mail $Printfi $Cat $Grep $Mktemp $Rm $Tail; do
 	if [ ! -x $Bin ]; then
 		echo "Can't execute $Bin"
 		exit 1
@@ -60,34 +75,51 @@ if [ -e $StampTemp ] || [ -e $LineTemp ]; then
 	fi
 fi
 
-# Main
+if [ ! -w /tmp ]; then
+	echo "Can't write to /tmp"
+	exit 1
+fi
+
+### Main ###
 
 # First of all, check if we have read the log file before and whatever if has
 # been rotated
 if [ -e $StampTemp ] && [ -e $LineTemp ]; then
 	$Sed -n "`$Cat $LineTemp`p" $Authlog | $Grep "`$Cat $StampTemp`" \
 		> /dev/null
-	if [ $? -eq 0 ]; then
-		StartLine=`$Cat $LineTemp`
+	if [ $? -eq 0 ]; then                # If the logfile hasn't been 
+		StartLine=`$Cat $LineTemp`   # been rotated, set StartLine
+		((StartLine++))              # from the last run and +1
 	fi
 fi
 
+# Check for new failed login attempts since last run (based on StartLine)
 check_for_new_failed
-if [ $New -eq 1 ]; then
+
+# Redirect all output below to a temporary file for mailing
+MailTemp=`$Mktemp -t failed_logins_mail.XXXXXX`
+exec 1> $MailTemp
+
+if [ $New -eq 1 ]; then # = if there are new failed logins
 	# Print a nice header
 	$Printf "Date & time\t\tUser\t\tFrom host\n"
 	$Printf "-----------\t\t----\t\t---------\n"
+
+	# Print out the latest failed login attempts
 	show_failed_logins
 
-	# Save the last line and the last timestamp for next run (WORK IN PROGRESS)
-	show_failed_logins | $Awk '{ print $1" "$2" "$3 }' \
-		| $Sed -n '$p' > $StampTemp
-	LastStamp=`$Cat $StampTemp`
+	# Save the last line and the last timestamp for the next run
+	save_last_stamp_and_line
+fi
 
-$Cat $Authlog | sed -n "/$LastStamp/{
-=
-p
-}" | tail -n2 | sed -n '/^[0-9]/p' > $LineTemp
+# Mail the failed logins if there are any (ie if the MailTemp file is NOT empty)
+if [ -s $MailTemp ]; then
+	$Mail $Admin -s "Failed logins" < $MailTemp
+fi
+
+# Clean up
+if [ -e $MailTemp ]; then
+	$Rm $MailTemp
 fi
 
 exit 0
