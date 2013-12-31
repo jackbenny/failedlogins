@@ -1,5 +1,5 @@
 # failedlogins.sh #
-This is a small Bash script I wrote for a programming & scripting course at
+This is a small Bash script I wrote for a programming & scripting class at
 school. The script checks for failed SSH logins in /var/log/auth.log by default.
 The failed logins are then sent by e-mail to the admin user specified in the
 Admin variable.
@@ -10,7 +10,7 @@ cluttering the admin's mailbox.
 The script is meant to run from a cronjob, for example once every hour or day
 or whatever suits your needs. An example (15 minutes after every hour) would be:
 ```
-15 * * * * /home/admin/failed_logins.sh
+15 * * * * /home/admin/failedlogins.sh
 ```
 
 ## Compability ##
