@@ -1,4 +1,4 @@
-# failed\_logins.sh #
+# failedlogins.sh #
 This is a small Bash script I wrote for a programming & scripting course at
 school. The script checks for failed SSH logins in /var/log/auth.log by default.
 The failed logins are then sent by e-mail to the admin user specified in the
