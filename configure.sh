@@ -6,8 +6,8 @@
 
 # Variables
 Binaries=(sed awk egrep mail printf cat grep mktemp rm tail)
-File="failed_logins.sh"
-TempFile=`mktemp -t failed_logins.XXXXXX`
+File="failedlogins.sh"
+TempFile=`mktemp -t failedlogins.XXXXXX`
 StartBin=8
 EndBin=17
 
