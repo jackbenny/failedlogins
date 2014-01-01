@@ -26,13 +26,13 @@
 # Variables
 Binaries=(sed awk egrep mail printf cat grep mktemp rm tail)
 File="failedlogins.sh"
-TempFile=`mktemp -t failedlogins.XXXXXX`
+TempFile=`mktemp -t ${File}.XXXXXX`
 StartBin=8
 EndBin=17
 
 # Check that they are all installed
 for bin in ${Binaries[@]}; do
-	whereis $bin | awk '{ print $2 }' | grep $bin &> /dev/null
+	which $bin &> /dev/null
 	if [ $? -ne 0 ]; then
 		echo "It seems you system dosen't have $bin installed"
 		exit 1
@@ -46,7 +46,7 @@ cp $File $TempFile
 # variables for the script looking like this: Binary="/bin/binary"
 Index=0
 for i in ${Binaries[@]}; do
-	NewBins[$Index]=$(echo "$i=\"`whereis $i | awk '{ print $2 }'`\"" | \
+	NewBins[$Index]=$(echo "$i=\"`which $i`\"" | \
 		sed "s/\b\(^.\)/\u\1/g")
 	((Index++))
 done
