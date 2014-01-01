@@ -78,7 +78,7 @@ if [ ! -r $Authlog ]; then
 	exit 1
 fi
 
-for Bin in $Sed $Awk $Egrep $Mail $Printfi $Cat $Grep $Mktemp $Rm $Tail; do
+for Bin in $Sed $Awk $Egrep $Mail $Printf $Cat $Grep $Mktemp $Rm $Tail; do
 	if [ ! -x $Bin ]; then
 		echo "Can't execute $Bin"
 		exit 1
